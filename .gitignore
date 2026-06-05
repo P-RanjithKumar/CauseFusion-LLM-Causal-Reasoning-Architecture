@@ -140,3 +140,12 @@ Thumbs.db
 *.tgz
 *.rar
 
+# Specific python compiled extensions
+*.pyc
+*.pyo
+
+# Generated output directories
+build/output/
+
+
+
