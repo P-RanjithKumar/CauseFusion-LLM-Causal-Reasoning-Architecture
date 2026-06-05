@@ -128,3 +128,15 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Large Documents / Presentation binaries
+*.pdf
+*.pptx
+*.ppt
+*.docx
+*.doc
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+
