@@ -79,12 +79,22 @@ class SCMLearner:
 
         # Ordinals / quantities
         "number", "amount", "pair", "set", "group",
+
+        # Temporal reference nouns (not causal events/states)
+        "past", "present", "future", "time", "day", "week", "month", "year",
     }
 
     # Thresholds
     MIN_SEMANTIC_SIMILARITY = 0.30   # Real vectors need higher threshold
-    MIN_CAUSAL_PLAUSIBILITY = 0.40   # Raised NLI threshold for meaningful entailment
+    MIN_CAUSAL_PLAUSIBILITY = 0.40   # Default NLI threshold (overridden by dynamic thresholding)
     MIN_CONCEPT_LENGTH = 3
+    MIN_ABSOLUTE_FLOOR = 0.38        # Absolute safety net floor for dynamic threshold
+    ASYMMETRY_MARGIN = 0.05          # Strict margin to reject symmetrical noise
+
+    # Dynamic threshold parameters
+    DENSE_THRESHOLD = 0.42   # Threshold for domains with many edges (stricter)
+    SPARSE_THRESHOLD = 0.32  # Threshold for domains with few edges (more permissive)
+    EDGE_DENSITY_PIVOT = 25  # Domains with fewer edges than this are considered sparse
 
     # -- Causal templates for NLI validation ------------------------------
     CAUSAL_TEMPLATES = [
@@ -109,6 +119,35 @@ class SCMLearner:
         self._seen_pairs: set = set()
         # Cache NLI scores to avoid repeated inference
         self._nli_cache: Dict[Tuple[str, str], float] = {}
+
+    # ====================================================================
+    #  DYNAMIC PER-DOMAIN VALIDATION THRESHOLD
+    # ====================================================================
+
+    def get_dynamic_threshold(self, scm: CausalModel = None) -> float:
+        """Compute a per-domain NLI validation threshold based on edge density.
+
+        Sparse domains (few edges) get a LOWER threshold to encourage
+        knowledge expansion, while dense domains get a HIGHER threshold
+        to aggressively filter noise.
+
+        Formula: linear interpolation between SPARSE_THRESHOLD and
+        DENSE_THRESHOLD based on current edge count vs. EDGE_DENSITY_PIVOT.
+        """
+        if scm is None:
+            return max(self.MIN_CAUSAL_PLAUSIBILITY, self.MIN_ABSOLUTE_FLOOR)
+
+        edge_count = len(scm.edges)
+        if edge_count >= self.EDGE_DENSITY_PIVOT:
+            # Dense domain — use strict threshold
+            calculated_threshold = self.DENSE_THRESHOLD
+        else:
+            # Linear interpolation: sparse -> permissive, dense -> strict
+            ratio = edge_count / self.EDGE_DENSITY_PIVOT
+            calculated_threshold = self.SPARSE_THRESHOLD + ratio * (self.DENSE_THRESHOLD - self.SPARSE_THRESHOLD)
+            calculated_threshold = round(calculated_threshold, 3)
+
+        return max(calculated_threshold, self.MIN_ABSOLUTE_FLOOR)
 
     # ====================================================================
     #  NEURAL CAUSAL VALIDATION (The Intelligence)
@@ -157,7 +196,8 @@ class SCMLearner:
     # ====================================================================
 
     def extract_causal_pairs(
-        self, premise: str, choice: str, question_type: str = "effect"
+        self, premise: str, choice: str, question_type: str = "effect",
+        scm: CausalModel = None,
     ) -> List[Tuple[str, str, float]]:
         """Extract (cause, effect, confidence) triples using multiple strategies.
 
@@ -168,6 +208,7 @@ class SCMLearner:
           4. Cross-sentence concept linking with vector similarity (0.5)
 
         All pairs are then validated by the NLI model for causal plausibility.
+        Uses dynamic per-domain threshold if an SCM is provided.
         """
         raw_pairs: List[Tuple[str, str, float]] = []
 
@@ -200,12 +241,20 @@ class SCMLearner:
         deduped = self._deduplicate_pairs(raw_pairs)
 
         # *** NEURAL VALIDATION: Score all pairs for causal plausibility ***
+        # Use dynamic threshold based on domain edge density
+        threshold = self.get_dynamic_threshold(scm)
         validated_pairs = []
         for cause, effect, conf in deduped:
+            # POS Structural Gating (The NLP Fix)
+            if self._is_pure_static_noun(cause) and self._is_pure_static_noun(effect):
+                log.info("Dropped structural correlation (noun-to-noun): %s -> %s", cause, effect)
+                continue
+
             forward_score = self._score_causal_plausibility(cause, effect)
             backward_score = self._score_causal_plausibility(effect, cause)
 
-            if forward_score >= self.MIN_CAUSAL_PLAUSIBILITY and forward_score > backward_score:
+            # Strict Asymmetry Margin (The Math Fix)
+            if forward_score >= threshold and (forward_score - backward_score) >= self.ASYMMETRY_MARGIN:
                 # Blend extraction confidence with neural plausibility
                 final_conf = 0.6 * conf + 0.4 * forward_score
                 validated_pairs.append((cause, effect, final_conf))
@@ -466,6 +515,16 @@ class SCMLearner:
             return False
         return True
 
+    def _is_pure_static_noun(self, concept: str) -> bool:
+        """Check if the concept consists only of static nouns, i.e.,
+        it does NOT contain any verb, adjective, or adverb.
+        """
+        doc = self.nlp(concept.replace("_", " "))
+        for token in doc:
+            if token.pos_ in ("VERB", "AUX", "ADJ", "ADV"):
+                return False
+        return True
+
     def _vector_similarity(self, concept_a: str, concept_b: str) -> float:
         """Compute semantic similarity using spaCy word vectors (300D GloVe).
 
@@ -515,13 +574,13 @@ class SCMLearner:
 
         question_type = item.get("question_type", "effect")
 
-        # Extract + validate candidate pairs
-        candidates = self.extract_causal_pairs(premise, correct_choice, question_type)
+        # Extract + validate candidate pairs (with dynamic threshold)
+        candidates = self.extract_causal_pairs(premise, correct_choice, question_type, scm=scm)
 
         # Also extract from e-CARE human explanation if available (GOLD quality)
         explanation = item.get("explanation", "")
         if explanation:
-            explanation_pairs = self.extract_causal_pairs(explanation, correct_choice, question_type)
+            explanation_pairs = self.extract_causal_pairs(explanation, correct_choice, question_type, scm=scm)
             candidates.extend([
                 (c, e, min(conf + 0.15, 1.0))
                 for c, e, conf in explanation_pairs

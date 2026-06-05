@@ -8,52 +8,63 @@ class Level1GraphBuilder:
 
     DOMAIN_KEYWORDS = {
         "physical": [
-            "gravity", "heat", "cold", "force", "rain", "sun", "wind", "fire",
-            "electricity", "pressure", "friction", "impact", "break", "melt",
-            "freeze", "burn", "water", "light", "shadow", "movement"
+            "gravity", "force", "friction", "break", "movement", "fall", "balance",
+            "impact", "sound", "pressure", "mechanics", "spatial", "collision",
+            "drop", "trip", "slip", "strike", "breaking", "falling"
+        ],
+        "biological": [
+            "health", "virus", "bacteria", "germs", "pathogen", "disease", "illness",
+            "sickness", "fever", "infection", "exercise", "workout", "nutrition",
+            "diet", "digestion", "stomach", "injury", "wound", "bleed", "bleeding",
+            "treatment", "medicine", "healing", "cure", "sleep", "recovery",
+            "allergy", "sneeze", "sneezing"
+        ],
+        "environmental": [
+            "weather", "storm", "disaster", "ecosystem", "rain", "wetness", "sun",
+            "heat", "light", "shadow", "wind", "erosion", "drought", "fire",
+            "earthquake", "landslide", "mudslide", "flood", "climate", "sunlight"
         ],
         "social": [
-            "stress", "anger", "sadness", "kindness", "gratitude", "fear",
-            "success", "failure", "trust", "betrayal", "love", "hate",
-            "jealousy", "pride", "embarrassment", "friendship", "conflict",
-            "insult", "praise", "empathy", "guilt"
-        ],
-        "temporal": [
-            "practice", "neglect", "repetition", "time", "growth", "decay",
-            "habit", "improvement", "skill", "learning", "experience",
-            "age", "maturity", "memory", "forgetting", "progress"
-        ],
-        "economic": [
-            "income", "wealth", "debt", "expense", "profit", "loss", "payment",
-            "discount", "price", "purchase", "poverty", "salary", "cost",
-            "spend", "spending", "budget", "money", "financial", "investment",
-            "tax", "credit", "loan", "employment", "unemployed", "job"
+            "argument", "conflict", "friendship", "relationship", "communicate",
+            "communication", "chat", "conversation", "befriend", "love", "hate",
+            "trust", "distrust", "cooperation", "collaborate", "teamwork",
+            "alliance", "law", "legal", "rules", "compliance", "obey", "insult",
+            "pride", "embarrassment", "apology", "forgiveness", "arguing", "befriending"
         ],
         "cognitive": [
-            "study", "knowledge", "confusion", "investigation", "understanding",
-            "mistake", "skill", "concentration", "ignorance", "misunderstanding",
-            "question", "clarity", "explanation", "evidence", "belief", "reasoning",
-            "conclusion", "observation", "hypothesis", "testing", "feedback",
-            "improvement", "example", "comprehension", "pattern", "memory"
+            "intention", "emotion", "mental", "confusion", "learn", "learning",
+            "study", "fear", "threat", "anxiety", "nervous", "success", "failure",
+            "confidence", "sadness", "joy", "excitement", "memory", "curiosity",
+            "exploration", "concentration", "focus", "comprehension", "emotions",
+            "intentions"
         ],
-        "work": [
-            "success", "promotion", "failure", "termination", "skill", "hiring",
-            "mistake", "discipline", "innovation", "advancement", "performance",
-            "evaluation", "teamwork", "project", "conflict", "competence",
-            "negligence", "dedication", "reward", "experience", "training",
-            "leadership", "communication", "effort", "accomplishment", "deadline",
-            "pressure", "collaboration", "merit", "employment", "job", "career"
+        "institutional": [
+            "work", "economy", "economics", "structure", "organization", "hiring",
+            "hire", "employ", "employment", "job", "career", "inflation", "banking",
+            "bank", "price", "credit", "budget", "investment", "invest", "profit",
+            "loss", "debt", "bankruptcy", "tax", "promotion", "merit", "deregulation",
+            "competition", "scarcity"
         ]
     }
 
-    def classify(self, premise: str) -> str:
-        text = premise.lower()
+    def classify(self, premise: str, choice1: str = "", choice2: str = "") -> str:
+        """Classify domain using ALL available text (premise + both choices).
+
+        Enhanced V2: Uses word-boundary matching to prevent partial hits
+        (e.g., 'daylight' no longer matches keyword 'light') and considers
+        choice texts which often contain the most domain-specific language.
+        """
+        import re
+        # Combine all available text for richer keyword matching
+        text = f"{premise} {choice1} {choice2}".lower()
+        words = set(re.findall(r'\b\w+\b', text))
+
         scores = {domain: 0 for domain in self.DOMAIN_KEYWORDS}
         for domain, keywords in self.DOMAIN_KEYWORDS.items():
             for kw in keywords:
-                if kw in text:
-                    scores[domain] += 1
-        
+                if kw in words:  # Word-boundary match, not substring
+                     scores[domain] += 1
+
         # Return domain with highest score, default to physical
         best_domain = max(scores, key=scores.get)
         return best_domain if scores[best_domain] > 0 else "physical"
@@ -89,7 +100,7 @@ class Orchestrator:
         self.l2 = Level2GraphBuilder()
 
     def route(self, premise: str, choice1: str, choice2: str) -> Dict:
-        domain = self.l1.classify(premise)
+        domain = self.l1.classify(premise, choice1, choice2)
         scm = self.scms.get(domain, self.scms["physical"])
         
         # Try Level 2 extraction for variable matching

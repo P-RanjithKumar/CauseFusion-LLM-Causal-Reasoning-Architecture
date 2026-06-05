@@ -24,10 +24,10 @@ matplotlib.use("Agg")
 from core.scm_builders import (
     build_physical_causation_model,
     build_social_causation_model,
-    build_temporal_causation_model,
-    build_economic_causation_model,
+    build_biological_causation_model,
+    build_environmental_causation_model,
     build_cognitive_causation_model,
-    build_work_causation_model
+    build_institutional_causation_model
 )
 from nlp.graph_builders import Orchestrator
 from models.bert_evaluator import BertEvaluator
@@ -59,10 +59,10 @@ for d in (FIGURES_DIR, RESULTS_DIR):
 
 
 def run_experiment_matrix(
-    max_copa_items: int = 50,
-    max_bcopa_items: int = 50,
-    max_ecare_items: int = 50,
-    max_cladder_items: int = 50,
+    max_copa_items: int = 100,
+    max_bcopa_items: int = 1000,
+    max_ecare_items: int = 2122,
+    max_cladder_items: int = 500,
 ):
     """
     Run the complete experiment matrix using modular components.
@@ -73,19 +73,19 @@ def run_experiment_matrix(
 
     # 1. Build SCMs
     log.info("Building SCMs …")
-    physical  = build_physical_causation_model()
-    social    = build_social_causation_model()
-    temporal  = build_temporal_causation_model()
-    economic  = build_economic_causation_model()
-    cognitive = build_cognitive_causation_model()
-    work      = build_work_causation_model()
+    physical      = build_physical_causation_model()
+    social        = build_social_causation_model()
+    biological    = build_biological_causation_model()
+    environmental = build_environmental_causation_model()
+    cognitive     = build_cognitive_causation_model()
+    institutional = build_institutional_causation_model()
     scms = {
         "physical": physical,
         "social": social,
-        "temporal": temporal,
-        "economic": economic,
+        "biological": biological,
+        "environmental": environmental,
         "cognitive": cognitive,
-        "work": work
+        "institutional": institutional
     }
     for name, scm in scms.items():
         log.info("  %s: %d vars, %d edges", name, len(scm.variables), len(scm.edges))
@@ -190,7 +190,7 @@ def run_experiment_matrix(
 
     # Phase 1: Learn from COPA training data (we have ground-truth labels)
     log.info("Learning from COPA training data …")
-    copa_train = [format_copa_item(x, "copa_train") for x in copa["train"]][:50]
+    copa_train = [format_copa_item(x, "copa_train") for x in copa["train"]][:500]
     total_learned = 0
     for i, item in enumerate(copa_train):
         result = fc_learning.predict_with_feedback(
@@ -201,7 +201,7 @@ def run_experiment_matrix(
             total_learned += len(new_edges)
             for edge in new_edges:
                 conf = edge.get('confidence', 0.5)
-                print(f"  [COPA {i+1:2d}] Learned: {edge['cause']:20s} → {edge['effect']:20s} (str={edge['strength']:.2f}, conf={conf:.2f})")
+                print(f"  [COPA {i+1:2d}] Learned: {edge['cause']:20s} -> {edge['effect']:20s} (str={edge['strength']:.2f}, conf={conf:.2f})")
                 time.sleep(0.1) # 0.1 sec delay for speed
     log.info("  Learned %d new edges from COPA training data", total_learned)
 
@@ -209,7 +209,7 @@ def run_experiment_matrix(
     if ecare_items:
         log.info("Learning from e-CARE training data …")
         ecare_learn_split = "train" if "train" in ecare else list(ecare.keys())[0]
-        ecare_train = [format_ecare_item(x) for x in list(ecare[ecare_learn_split])][:50]
+        ecare_train = [format_ecare_item(x) for x in list(ecare[ecare_learn_split])][:500]
         for i, item in enumerate(ecare_train):
             result = fc_learning.predict_with_feedback(
                 item, max_retries=3, ground_truth=item["label"]
@@ -219,7 +219,7 @@ def run_experiment_matrix(
                 total_learned += len(new_edges)
                 for edge in new_edges:
                     conf = edge.get('confidence', 0.5)
-                    print(f"  [eCARE {i+1:2d}] Learned: {edge['cause']:20s} → {edge['effect']:20s} (str={edge['strength']:.2f}, conf={conf:.2f})")
+                    print(f"  [eCARE {i+1:2d}] Learned: {edge['cause']:20s} -> {edge['effect']:20s} (str={edge['strength']:.2f}, conf={conf:.2f})")
                     time.sleep(0.1) # 0.1 sec delay for speed
         log.info("  Total learned edges after e-CARE: %d", total_learned)
 
@@ -388,7 +388,7 @@ def run_experiment_matrix(
     print("SCM GROWTH (Self-Updating Novelty)")
     print("=" * 70)
     for row in growth_rows:
-        print(f"  {row['domain']:12s}  edges: {row['edges_before']} → {row['edges_after']}  (+{row['new_edges']} new)")
+        print(f"  {row['domain']:12s}  edges: {row['edges_before']} -> {row['edges_after']}  (+{row['new_edges']} new)")
 
     plot_comparison(all_results, FIGURES_DIR)
     plot_retry_distribution(retry_counts, FIGURES_DIR, "copa_retry_dist_modular")
@@ -405,20 +405,19 @@ if __name__ == "__main__":
     print("  Modular Implementation V3")
     print("=" * 70)
 
-    # Quick demo
     phys = build_physical_causation_model()
-    valid, path, strength = phys.verify_causal_claim("rain", "slipping")
-    print(f"\n✓ Causal Path (rain → slipping): {'→'.join(path)} (str={strength:.2f})")
+    valid, path, strength = phys.verify_causal_claim("gravity", "falling")
+    print(f"\n[OK] Causal Path (gravity -> falling): {'->'.join(path)} (str={strength:.2f})")
 
     ee = EffectEstimator(phys)
-    print(f"✓ Causal Effects: {ee.all_effects('rain', 'slipping')}")
+    print(f"[OK] Causal Effects: {ee.all_effects('gravity', 'falling')}")
 
     # Full experiment matrix
     run_experiment_matrix(
-        max_copa_items=50,
-        max_bcopa_items=50,
-        max_ecare_items=50,
-        max_cladder_items=50,
+        max_copa_items=100,
+        max_bcopa_items=1000,
+        max_ecare_items=2122,
+        max_cladder_items=500,
     )
 
-    print("\n✅ All done! Modularized codebase is ready.")
+    print("\n[DONE] All done! Modularized codebase is ready.")

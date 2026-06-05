@@ -123,14 +123,71 @@ class BertEvaluator:
 
     # ── Prediction Methods ─────────────────────────────────────────────
 
+    def _score_ensemble_batched(self, premise: str, choice1: str, choice2: str) -> Tuple[float, float]:
+        """Compute the multi-signal ensemble scores for both choices in parallel batches.
+
+        This optimizes GPU execution by running the 4 NLI cross-encoder forward passes
+        and the 3 Sentence Transformer sentence embeddings in consolidated batches.
+        """
+        # --- Batch 1: NLI Cross-Encoder (4 forward/backward pairs) ---
+        # 0: (premise, choice1) - forward 1
+        # 1: (choice1, premise) - backward 1
+        # 2: (premise, choice2) - forward 2
+        # 3: (choice2, premise) - backward 2
+        premises = [premise, choice1, premise, choice2]
+        hypotheses = [choice1, premise, choice2, premise]
+
+        enc = self.tokenizer(
+            premises, hypotheses,
+            padding=True, return_tensors="pt", truncation=True, max_length=256
+        ).to(self.device)
+
+        with self._torch.no_grad():
+            logits = self.model(**enc).logits
+        probs = self._torch.softmax(logits, dim=-1)
+
+        # Choice 1 NLI probs
+        fwd1_neut = probs[0, self._neut_idx].item()
+        fwd1_ent = probs[0, self._ent_idx].item()
+        bwd1_neut = probs[1, self._neut_idx].item()
+        bwd1_ent = probs[1, self._ent_idx].item()
+
+        # Choice 2 NLI probs
+        fwd2_neut = probs[2, self._neut_idx].item()
+        fwd2_ent = probs[2, self._ent_idx].item()
+        bwd2_neut = probs[3, self._neut_idx].item()
+        bwd2_ent = probs[3, self._ent_idx].item()
+
+        bidir_neutral1 = (fwd1_neut + bwd1_neut) / 2.0
+        bidir_entailment1 = (fwd1_ent + bwd1_ent) / 2.0
+
+        bidir_neutral2 = (fwd2_neut + bwd2_neut) / 2.0
+        bidir_entailment2 = (fwd2_ent + bwd2_ent) / 2.0
+
+        # --- Batch 2: Sentence Similarity (3 unique sentence encodings) ---
+        embs = self.st_model.encode([premise, choice1, choice2], convert_to_tensor=True)
+        
+        sim1 = util.cos_sim(embs[0], embs[1]).item()
+        sim2 = util.cos_sim(embs[0], embs[2]).item()
+
+        # --- Weighted Ensemble Formula ---
+        score1 = (self.W_BIDIR_NEUTRAL * bidir_neutral1
+                + self.W_BIDIR_ENTAILMENT * bidir_entailment1
+                + self.W_SENTENCE_SIM * sim1)
+
+        score2 = (self.W_BIDIR_NEUTRAL * bidir_neutral2
+                + self.W_BIDIR_ENTAILMENT * bidir_entailment2
+                + self.W_SENTENCE_SIM * sim2)
+
+        return score1, score2
+
     def predict(self, item: Dict) -> int:
         """Return 0 or 1 — predicted label for a COPA item.
 
         V2: Uses the multi-signal ensemble scorer instead of raw NLI.
         """
         premise = item["premise"]
-        s1 = self._score_ensemble(premise, item["choice1"])
-        s2 = self._score_ensemble(premise, item["choice2"])
+        s1, s2 = self._score_ensemble_batched(premise, item["choice1"], item["choice2"])
         return 0 if s1 >= s2 else 1
 
     def predict_with_scm_boost(
@@ -141,8 +198,7 @@ class BertEvaluator:
         Returns (predicted_label, debug_info).
         """
         premise = item["premise"]
-        ens_s1 = self._score_ensemble(premise, item["choice1"])
-        ens_s2 = self._score_ensemble(premise, item["choice2"])
+        ens_s1, ens_s2 = self._score_ensemble_batched(premise, item["choice1"], item["choice2"])
 
         # Tokenize separately via spaCy
         prem_toks = [t.lemma_.lower() for t in nlp(premise) if t.pos_ in ("NOUN", "VERB", "ADJ")]
@@ -151,11 +207,11 @@ class BertEvaluator:
 
         question_type = item.get("question_type", "effect")
         if question_type == "cause":
-            scm_s1 = scm.score_directed_alignment(c1_toks, prem_toks, nlp=nlp)
-            scm_s2 = scm.score_directed_alignment(c2_toks, prem_toks, nlp=nlp)
+            scm_s1 = scm.score_directed_alignment(c1_toks, prem_toks, nlp=nlp, st_model=self.st_model)
+            scm_s2 = scm.score_directed_alignment(c2_toks, prem_toks, nlp=nlp, st_model=self.st_model)
         else:
-            scm_s1 = scm.score_directed_alignment(prem_toks, c1_toks, nlp=nlp)
-            scm_s2 = scm.score_directed_alignment(prem_toks, c2_toks, nlp=nlp)
+            scm_s1 = scm.score_directed_alignment(prem_toks, c1_toks, nlp=nlp, st_model=self.st_model)
+            scm_s2 = scm.score_directed_alignment(prem_toks, c2_toks, nlp=nlp, st_model=self.st_model)
 
         # Blend: (1-w)*Ensemble + w*SCM
         w = boost_weight

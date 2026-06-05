@@ -1,0 +1,7 @@
+pandas
+matplotlib
+spacy
+torch
+transformers
+sentence-transformers
+datasets
