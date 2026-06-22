@@ -180,7 +180,7 @@ def run_experiment_matrix(
     import time
 
     # ══════════════════════════════════════════════════════════════════════
-    #  NOVELTY: LEARNING PHASE — SCM Self-Updates from training data
+    # LEARNING PHASE
     # ══════════════════════════════════════════════════════════════════════
     log.info("=" * 70)
     log.info("NOVELTY — Self-Updating SCM: Learning Phase (n=50, 1sec delay)")
@@ -188,7 +188,7 @@ def run_experiment_matrix(
 
     fc_learning = FeedbackController(bert, orch, learning_enabled=True)
 
-    # Phase 1: Learn from COPA training data (we have ground-truth labels)
+    # Phase 1: Learn from COPA training data (we have ground-truth labels).
     log.info("Learning from COPA training data …")
     copa_train = [format_copa_item(x, "copa_train") for x in copa["train"]][:500]
     total_learned = 0
@@ -205,7 +205,7 @@ def run_experiment_matrix(
                 time.sleep(0.1) # 0.1 sec delay for speed
     log.info("  Learned %d new edges from COPA training data", total_learned)
 
-    # Phase 2: Learn from e-CARE (has rich human explanations)
+    # Phase 2: Learn from e-CARE (has rich human explanations).
     if ecare_items:
         log.info("Learning from e-CARE training data …")
         ecare_learn_split = "train" if "train" in ecare else list(ecare.keys())[0]
@@ -291,7 +291,9 @@ def run_experiment_matrix(
         all_results.append(res)
 
         # Explanation alignment
-        ecare_alignment = evaluate_explanation_alignment(ecare_scm_paths, ecare_explanations)
+        ecare_alignment = evaluate_explanation_alignment(
+            ecare_scm_paths, ecare_explanations, st_model=bert.st_model
+        )
         log.info("e-CARE Explanation Alignment Score: %.4f", ecare_alignment["mean_alignment"])
 
     # ── Experiment F: Arch 2 on CLadder (causal rungs) ──────────────────

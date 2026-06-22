@@ -75,30 +75,86 @@ def plot_retry_distribution(retry_counts: List[int], figures_dir: Path, tag: str
 def evaluate_explanation_alignment(
     scm_paths: List[str],
     human_explanations: List[str],
+    st_model=None,
 ) -> Dict:
-    """Compute token-overlap alignment between SCM causal paths and
-    human-written conceptual explanations from e-CARE.
+    """Compute alignment between SCM causal paths and human-written
+    conceptual explanations from e-CARE.
+
+    Dense Semantic Matching (V4):
+      When st_model (SentenceTransformer, e.g. all-MiniLM-L6-v2) is provided,
+      converts SCM path strings ("rain→wetness") into natural language
+      ("rain causes wetness") and computes cosine similarity against
+      human explanations using dense embeddings.
+
+      S_match = CosineSimilarity(MiniLM(SCM_Path), MiniLM(Human_Explanation))
+
+      Falls back to Jaccard token-overlap when st_model is not available.
 
     Returns per-item scores and an aggregate mean alignment score.
     """
+    # ── Dense semantic alignment via MiniLM ────────────────────────────
+    if st_model is not None:
+        from sentence_transformers import util as st_util
+
+        # Convert SCM path strings to natural language sentences
+        scm_sentences = []
+        valid_indices = []
+        for i, (scm_path, human) in enumerate(zip(scm_paths, human_explanations)):
+            if not scm_path or scm_path == "none" or not human:
+                continue
+            # "rain→wetness" → "rain causes wetness"
+            path_sentence = scm_path.replace("→", " causes ").replace("_", " ")
+            scm_sentences.append((i, path_sentence, human))
+
+        scores = [0.0] * len(scm_paths)
+
+        if scm_sentences:
+            # Batch encode for efficiency (batch_size=32 for 2122-item e-CARE)
+            path_texts = [s[1] for s in scm_sentences]
+            human_texts = [s[2] for s in scm_sentences]
+
+            path_embeddings = st_model.encode(path_texts, batch_size=32,
+                                               convert_to_tensor=True,
+                                               show_progress_bar=False)
+            human_embeddings = st_model.encode(human_texts, batch_size=32,
+                                                convert_to_tensor=True,
+                                                show_progress_bar=False)
+
+            # Full cosine similarity matrix, then extract diagonal for 1:1 alignments
+            cos_sims = st_util.cos_sim(path_embeddings, human_embeddings)
+            diagonal_sims = cos_sims.diagonal()
+
+            for j, (orig_idx, _, _) in enumerate(scm_sentences):
+                # Clamp to [0, 1] — cosine similarity can be slightly negative
+                scores[orig_idx] = max(0.0, diagonal_sims[j].item())
+
+        mean_score = sum(scores) / max(len(scores), 1)
+        log.info("e-CARE Explanation Alignment (MiniLM dense)  mean=%.4f  (n=%d)",
+                 mean_score, len(scores))
+        return {
+            "mean_alignment": mean_score,
+            "per_item_scores": scores,
+            "n": len(scores),
+        }
+
+    # ── Fallback: Jaccard token-overlap alignment ──────────────────────
     scores = []
     for scm_path, human in zip(scm_paths, human_explanations):
         if not scm_path or scm_path == "none" or not human:
             scores.append(0.0)
             continue
-        # Tokenise both strings to sets of lowercase words
         scm_tokens = set(scm_path.lower().replace("→", " ").split())
         human_tokens = set(human.lower().split())
         if not human_tokens:
             scores.append(0.0)
             continue
         overlap = scm_tokens & human_tokens
-        # Jaccard-style alignment
         score = len(overlap) / len(scm_tokens | human_tokens)
         scores.append(score)
 
     mean_score = sum(scores) / max(len(scores), 1)
-    log.info("e-CARE Explanation Alignment  mean=%.4f  (n=%d)", mean_score, len(scores))
+    log.info("e-CARE Explanation Alignment (Jaccard fallback)  mean=%.4f  (n=%d)",
+             mean_score, len(scores))
     return {
         "mean_alignment": mean_score,
         "per_item_scores": scores,

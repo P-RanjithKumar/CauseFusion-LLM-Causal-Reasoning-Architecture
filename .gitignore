@@ -146,6 +146,7 @@ Thumbs.db
 
 # Generated output directories
 build/output/
+src/output/
 
 
 
