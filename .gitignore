@@ -130,9 +130,6 @@ Thumbs.db
 *.swo
 
 # Large Documents / Presentation binaries
-*.pdf
-*.pptx
-*.ppt
 *.docx
 *.doc
 *.zip
