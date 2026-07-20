@@ -1,0 +1,303 @@
+{
+  "half": "dev",
+  "model": "llama-3.3-70b-versatile",
+  "n_items": 30,
+  "conditions": {
+    "llm_direct": {
+      "n": 30,
+      "accuracy": 0.5,
+      "coverage": 1.0,
+      "per_rung": {
+        "1": {
+          "n": 6,
+          "accuracy": 0.6667,
+          "coverage": 1.0
+        },
+        "2": {
+          "n": 15,
+          "accuracy": 0.4667,
+          "coverage": 1.0
+        },
+        "3": {
+          "n": 9,
+          "accuracy": 0.4444,
+          "coverage": 1.0
+        }
+      }
+    }
+  },
+  "detail": {
+    "llm_direct": [
+      {
+        "id": "cladder-70631-6847",
+        "rung": "2",
+        "answer": "no",
+        "gold": "no",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-76038-3639",
+        "rung": "3",
+        "answer": "yes",
+        "gold": "no",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-63247-6190",
+        "rung": "1",
+        "answer": "yes",
+        "gold": "yes",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-77464-3836",
+        "rung": "3",
+        "answer": "no",
+        "gold": "yes",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-70218-6810",
+        "rung": "1",
+        "answer": "no",
+        "gold": "no",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-53434-2467",
+        "rung": "2",
+        "answer": "no",
+        "gold": "no",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-56940-2782",
+        "rung": "2",
+        "answer": "yes",
+        "gold": "no",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-46437-5678",
+        "rung": "2",
+        "answer": "no",
+        "gold": "no",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-77312-3818",
+        "rung": "3",
+        "answer": "yes",
+        "gold": "no",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-56485-2742",
+        "rung": "1",
+        "answer": "yes",
+        "gold": "yes",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-77064-3784",
+        "rung": "3",
+        "answer": "no",
+        "gold": "no",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-48587-5882",
+        "rung": "1",
+        "answer": "yes",
+        "gold": "no",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-54396-2555",
+        "rung": "3",
+        "answer": "yes",
+        "gold": "yes",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-70304-6819",
+        "rung": "1",
+        "answer": "yes",
+        "gold": "no",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-51136-2263",
+        "rung": "2",
+        "answer": "no",
+        "gold": "yes",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-44748-5540",
+        "rung": "3",
+        "answer": "yes",
+        "gold": "no",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-53020-2432",
+        "rung": "1",
+        "answer": "yes",
+        "gold": "yes",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-51182-2266",
+        "rung": "2",
+        "answer": "no",
+        "gold": "no",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-67080-6531",
+        "rung": "3",
+        "answer": "no",
+        "gold": "no",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-53729-2494",
+        "rung": "2",
+        "answer": "yes",
+        "gold": "yes",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-53097-2439",
+        "rung": "2",
+        "answer": "no",
+        "gold": "yes",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-56959-2784",
+        "rung": "3",
+        "answer": "no",
+        "gold": "no",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-53499-2474",
+        "rung": "2",
+        "answer": "no",
+        "gold": "yes",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-51711-2315",
+        "rung": "2",
+        "answer": "no",
+        "gold": "yes",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-51895-2331",
+        "rung": "2",
+        "answer": "no",
+        "gold": "yes",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-61922-6070",
+        "rung": "2",
+        "answer": "yes",
+        "gold": "no",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-9860-854",
+        "rung": "2",
+        "answer": "yes",
+        "gold": "yes",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-55214-2627",
+        "rung": "2",
+        "answer": "yes",
+        "gold": "no",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-64236-6277",
+        "rung": "2",
+        "answer": "no",
+        "gold": "no",
+        "covered": true,
+        "correct": true,
+        "note": "direct"
+      },
+      {
+        "id": "cladder-67847-6600",
+        "rung": "3",
+        "answer": "no",
+        "gold": "yes",
+        "covered": true,
+        "correct": false,
+        "note": "direct"
+      }
+    ]
+  }
+}
