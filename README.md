@@ -19,7 +19,7 @@ docs/
   proposal/             approved practicum proposal (.docx + PDF)
 src/
   causefusion/          the package (see below)
-  datasets/             balanced-copa-dev-all.xml (other corpora: see "Known gaps")
+  datasets/             balanced-copa-dev-all.xml
   results/              experiment_dev.json (30-item llm_direct dev run, Llama-3.3-70B via Groq)
 archive/                superseded material, kept for the record (see archive/README.md)
 requirements.txt
