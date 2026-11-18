@@ -55,11 +55,3 @@ python -m causefusion.experiment --half dev --conditions text,solver_meta
 ```
 
 Reports are written to `reports/` (git-ignored) unless `--out` is given.
-
-## Known gaps
-
-This repository is incomplete relative to the report. These pieces were not committed and may exist only on a collaborator's machine:
-
-- `src/causefusion/llm.py` — LLM client and prompts imported by `experiment.py`; without it the `llm_direct`, `llm_cot` and `llm_extract` conditions cannot run.
-- `src/datasets/` — only the Balanced-COPA XML is present. `ecare_train.jsonl`, `ecare_dev.jsonl`, `cladder_sample.jsonl`, `learned_edges.json` and `prepare.py` are missing, so e-CARE, CLadder, the `pmi` base predictor and `--augment` need those files first.
-- Outputs behind the report's CLadder numbers (test half, `solver_meta`, `llm_extract`, `llm_cot`); `src/results/` holds only the 30-item dev `llm_direct` run.
