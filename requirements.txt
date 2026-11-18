@@ -1,7 +1,11 @@
-pandas
-matplotlib
-spacy
-torch
-transformers
-sentence-transformers
-datasets
+# Core (enough for: causefusion.run on synthetic/copa/bcopa with lexical/symbolic bases)
+numpy
+
+# Optional: --base nli
+# torch
+# transformers
+# sentence-transformers
+
+# Optional: InterventionScorer cross-check (EffectEstimator.dowhy_backdoor)
+# dowhy
+# pandas

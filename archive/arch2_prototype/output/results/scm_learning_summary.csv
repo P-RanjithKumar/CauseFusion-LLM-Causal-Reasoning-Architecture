@@ -1,0 +1,24 @@
+cause,effect,strength,confidence,domain,source_premise,source_choice
+continent,sound,0.258,0.516,physical,I never heard the sounds of cicadas in Antactica.,I have traveled all the continents on earth.
+sign,point,0.343,0.685,physical,He finds a map and puts signs along an isobar.,Tom wants to put signs on a mountain at places with the same air pressure.
+mary,various_emotion,0.388,0.776,physical,Her boyfriend immediately called to comfort her.,"Mary sent a emoticon ""crying"" to her boyfriend on her cell phone."
+emoticon,various_emotion,0.399,0.799,physical,Her boyfriend immediately called to comfort her.,"Mary sent a emoticon ""crying"" to her boyfriend on her cell phone."
+cell,various_emotion,0.421,0.842,physical,Her boyfriend immediately called to comfort her.,"Mary sent a emoticon ""crying"" to her boyfriend on her cell phone."
+experiment,result,0.275,0.55,physical,The results showed high levels of glutamates.,Scientists conducted a series of experiments on truffles.
+viewpoint,relation,0.336,0.671,physical,He shifted the camera a little.,I asked him to adjust the viewpoint.
+world,aspect,0.351,0.701,physical,I imagined a world without chemicals.,Almost every aspect of man's everyday life would be affected.
+chemical,aspect,0.31,0.62,physical,I imagined a world without chemicals.,Almost every aspect of man's everyday life would be affected.
+cone,sense,0.28,0.56,physical,Cones are in shape of circles.,Farmers can evaluate the sense of freshness of cones by its diameters.
+circle,sense,0.264,0.528,physical,Cones are in shape of circles.,Farmers can evaluate the sense of freshness of cones by its diameters.
+cetacean,mechanism,0.348,0.696,physical,The cetacean used blowholes.,Controlled vocalization was produced.
+job,various_characteristic,0.337,0.673,cognitive,Bob's teacher suggested that Bob look at the job attributes of various jobs.,Bob wants to find a job.
+table,distinct_feature,0.284,0.569,physical,He made tables about the sales status over the past year.,Those tables show the distinct features of their sales status.
+tom,close_proximity,0.349,0.698,physical,The piglet is still playing happily.,Tom took the piglet a short distance away from the mother pig.
+system,functional_relatedness,0.336,0.672,physical,Its functional relatedness of different compositions in a molecue was high.,The cohesion of this system is outstanding.
+system,different_composition,0.273,0.546,physical,Its functional relatedness of different compositions in a molecue was high.,The cohesion of this system is outstanding.
+particular_experience,chance,0.303,0.606,institutional,All the young employees with particular experiences don't get a chance for inter,A company is going to hire 10 young employees without any particular experiences
+experiment,influence_result,0.36,0.72,physical,My experiments result were more reliable.,The instructor added more constraints to my experiment.
+unit,covering,0.349,0.698,environmental,Scientists wants to measure the illuminance of the sun.,They firstly measured the covering area of the sun.
+mass,other_variable,0.281,0.562,physical,It  kinetic energy increased.,Mass of the object increased with other variables unchanged.
+mass,kinetic_energy,0.344,0.687,physical,It  kinetic energy increased.,Mass of the object increased with other variables unchanged.
+verb,sense,0.311,0.623,physical,The sentence didn't make sense.,Tom described a verb with an adjective.

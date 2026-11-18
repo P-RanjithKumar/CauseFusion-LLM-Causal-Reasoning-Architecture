@@ -1,49 +1,65 @@
-# MCM PRACTICUM
+# CauseFusion
 
-This is a template for MCM practicums.  Please read these instructions carefully.
+**Hybrid LLM and Structural Causal Model architectures for enhanced causal reasoning and explanation traceability in language models.**
 
-This file is written in
-[markdown](https://guides.github.com/features/mastering-markdown/).  Markdown
-is a suitable format for documents stored in git repositories.
+Naseeruddeen Shahul Hameed and Ranjith Kumar Pachaiyappan — MSc in Computing (Artificial Intelligence), School of Computing, Dublin City University. Supervisor: Yalemisew Abgaz.
 
-## Instructions
+Language models answer causal questions fluently but unreliably, and the failures concentrate on interventions and counterfactuals (rungs 2 and 3 of Pearl's hierarchy). CauseFusion tests two ways of combining a language model with an explicit structural causal model (SCM):
 
-You *must* do the following:
+1. **Blending** — a base predictor (lexical, PMI, or an NLI ensemble) is combined with small hand-written domain SCMs through five integration patterns (causal RAG, guided decoding, oracle, intervention, adaptive) on COPA, Balanced COPA and e-CARE. Evaluation is coverage-stratified, with paired significance tests (McNemar mid-p, paired bootstrap, Bonferroni).
+2. **Division of labour** — on CLadder, the LLM only *reads* the story and extracts the causal model, while a verified closed-form estimand solver does the computation and abstains when it cannot compute exactly. Compared against direct and chain-of-thought LLM answering, with a dev/test split and frozen rules.
 
-1 - Fork this repo.
+The full write-up, with results, is in [docs/documentation/MSc(REPORT-CAUSEFUSION).pdf](docs/documentation/MSc(REPORT-CAUSEFUSION).pdf).
 
-2 - There is no need to rename your fork but if you wish to do so please use
-     the format:
+## Repository layout
 
-     2026-mcm-username
+```
+docs/
+  documentation/        final report (PDF)
+  proposal/             approved practicum proposal (.docx + PDF)
+src/
+  causefusion/          the package (see below)
+  datasets/             balanced-copa-dev-all.xml (other corpora: see "Known gaps")
+  results/              experiment_dev.json (30-item llm_direct dev run, Llama-3.3-70B via Groq)
+archive/                superseded material, kept for the record (see archive/README.md)
+requirements.txt
+```
 
-replacing `username` with your School of Computing login name.
+### `src/causefusion/`
 
-For example, if Stephen Blott were to be doing an MCM practicum, he would rename
-his repo as:
+| Module | Role |
+|---|---|
+| `schema.py`, `config.py` | Record types; all hyperparameters in one frozen `Config` |
+| `scm.py`, `domains.py` | Weighted/signed causal graph (grounding, noisy-OR path scoring, `do()` surgery, abduction); five hand-written domain graphs |
+| `routing.py`, `scoring_ctx.py` | Deterministic keyword router; path scoring and per-item evidence cache |
+| `base.py` | Base predictors: `lexical`, `pmi`, `nli`, `symbolic` (registry-based) |
+| `integration.py` | The five integration patterns |
+| `inference.py` | Counterfactual engine and effect estimator (Monte-Carlo ATE, optional DoWhy) |
+| `evaluation.py` | Bucketed accuracy, active/flipped subsets, McNemar, bootstrap CI, Cohen's h |
+| `counterfactual.py`, `extraction.py`, `holdout.py`, `causal_mechanism.py` | CLadder estimand solver, text→causal-spec extraction, dev/test split, shared mechanism protocol |
+| `data.py`, `learn.py`, `calibrate.py`, `run.py`, `experiment.py` | Loaders; e-CARE edge mining; hyperparameter calibration; benchmark runner; the 5-condition CLadder experiment |
 
-     2026-mcm-sblott
+## Running
 
+Run from `src/` (the package uses relative imports and resolves data relative to `src/`):
 
-You should also update the *Project description*.
+```bash
+pip install -r requirements.txt
+cd src
 
-3 - This directory has two important sub-directories.
+python -m causefusion.run --dataset synthetic          # offline smoke test
+python -m causefusion.run --dataset bcopa --limit 200  # Balanced COPA: baseline + 5 patterns + stats
+python -m causefusion.calibrate --dataset bcopa        # tune on 50%, report on held-out 50%
+python -m causefusion.holdout                          # CLadder solver, held-out half (needs CLadder data)
+python -m causefusion.experiment --half dev --conditions text,solver_meta
+```
 
-- All of your source code should be placed in the `src` sub-directory.
+Reports are written to `reports/` (git-ignored) unless `--out` is given.
 
-- All of your documentation should be placed in the `docs` sub-directory.
+## Known gaps
 
-4 - There is further important documentation in the `docs` directory.  Read that next.
+This repository is incomplete relative to the report. These pieces were not committed and may exist only on a collaborator's machine:
 
-When you are have followed all of these instructions and are sure that you
-understand what is expected, you may replace the contents of this file with a
-brief description of your project (two or three paragraphs).
-
-## Additional Resources
-
-- Git [cheat sheet](https://gitlab.computing.dcu.ie/sblott/local-gitlab-documentation/blob/master/cheat-sheet.md)
-- Gitlab [CI environment](https://gitlab.computing.dcu.ie/sblott/docker-ci-environment) and it's [available software](https://gitlab.computing.dcu.ie/sblott/docker-ci-environment/blob/master/Dockerfile)
-- Example projects with CI configured:
-   * [Python](https://gitlab.computing.dcu.ie/sblott/test-project-python)
-   * [Java](https://gitlab.computing.dcu.ie/sblott/test-project-java)
-   * [MySql](https://gitlab.computing.dcu.ie/sblott/test-project-mysql)
+- `src/causefusion/llm.py` — LLM client and prompts imported by `experiment.py`; without it the `llm_direct`, `llm_cot` and `llm_extract` conditions cannot run.
+- `src/datasets/` — only the Balanced-COPA XML is present. `ecare_train.jsonl`, `ecare_dev.jsonl`, `cladder_sample.jsonl`, `learned_edges.json` and `prepare.py` are missing, so e-CARE, CLadder, the `pmi` base predictor and `--augment` need those files first.
+- Outputs behind the report's CLadder numbers (test half, `solver_meta`, `llm_extract`, `llm_cot`); `src/results/` holds only the 30-item dev `llm_direct` run.

@@ -141,9 +141,9 @@ Thumbs.db
 *.pyc
 *.pyo
 
-# Generated output directories
-build/output/
-src/output/
+# Generated run reports (causefusion.run / experiment / calibrate write here by default)
+reports/
+src/reports/
 
 
 

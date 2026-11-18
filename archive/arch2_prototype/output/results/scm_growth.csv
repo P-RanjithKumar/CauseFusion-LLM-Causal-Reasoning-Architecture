@@ -1,0 +1,7 @@
+domain,vars_before,edges_before,vars_after,edges_after,new_vars,new_edges
+physical,11,8,42,28,31,20
+social,16,8,16,8,0,0
+biological,18,9,18,9,0,0
+environmental,13,7,15,8,2,1
+cognitive,14,7,16,8,2,1
+institutional,18,9,20,10,2,1

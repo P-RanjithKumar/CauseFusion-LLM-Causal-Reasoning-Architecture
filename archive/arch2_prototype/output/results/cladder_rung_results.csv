@@ -1,0 +1,4 @@
+dataset,rung,rung_name,accuracy,n
+CLadder,1,Rung 1 (Association),0.39655172413793105,174
+CLadder,2,Rung 2 (Intervention),0.5185185185185185,162
+CLadder,3,Rung 3 (Counterfactual),0.4695121951219512,164
