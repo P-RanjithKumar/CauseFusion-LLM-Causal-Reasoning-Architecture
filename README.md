@@ -2,6 +2,47 @@
 
 **Hybrid LLM and Structural Causal Model architectures for enhanced causal reasoning and explanation traceability in language models.**
 
+[![CI](https://github.com/P-RanjithKumar/CauseFusion-LLM-Causal-Reasoning-Architecture/actions/workflows/ci.yml/badge.svg)](https://github.com/P-RanjithKumar/CauseFusion-LLM-Causal-Reasoning-Architecture/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+## Headline result (CLadder, held-out test half)
+
+| Condition | What it is | Accuracy | Coverage |
+|---|---|---|---|
+| Text-only floor | Lexical base predictor, no causal representation | **0.497** | 1.00 |
+| **CauseFusion** | LLM extracts the causal model, verified solver computes | **0.921** | answers only what it can compute exactly; abstains otherwise |
+| Solver ceiling | Solver given the item's true mechanisms | 0.983 on covered items | 0.86 (abstains on 14%) |
+
+The gain is +42.4 points overall, +10.6 points on the counterfactual rung (rung 3). The solver abstains, with a stated reason, on confounded ETT, collider bias, and unregistered graph shapes. Rules were frozen on the dev half and scored on the test half.
+
+LLM-only baselines (Llama-3.3-70B via Groq, CLadder **dev** half, smaller samples): direct 0.50 (n=30), causal chain-of-thought 0.74 (n=50). The same open-weight model failed to produce parseable extractions with the unmodified prompt (coverage 0.00), which the report documents as a portability limitation. Full tables, significance tests and caveats are in the [report](docs/documentation/MSc(REPORT-CAUSEFUSION).pdf).
+
+## Example
+
+A CLadder-style item (graph with a confounder `V1`):
+
+```
+Q: Will X increase the chance of Y?
+given_info:  p(V1) = 0.5
+             p(Y | V1, X) = [[0.2, 0.4], [0.6, 0.8]]   # rows: V1=0,1; cols: X=0,1
+query_type:  ate
+```
+
+```python
+from causefusion.counterfactual import SolveRequest, solve
+solve(SolveRequest("ate", "Will X increase the chance of Y?", given_info))
+# Verdict(answer='yes', value=0.2, reason='ate')   # backdoor adjustment over V1
+```
+
+The same tables asked as an *effect of treatment on the treated* question are confounded, and the items do not supply `P(V1 | X=1)`. The solver refuses rather than guess:
+
+```python
+solve(SolveRequest("ett", "Will X increase the chance of Y?", given_info))
+# Verdict(answer=None, value=None, reason="no registered formula for query_type='ett'")
+```
+
+Because the LLM never votes on the answer, every non-abstained answer traces to a named formula and the numbers it was computed from.
+
 Naseeruddeen Shahul Hameed and Ranjith Kumar Pachaiyappan — MSc in Computing (Artificial Intelligence), School of Computing, Dublin City University. Supervisor: Yalemisew Abgaz.
 
 Language models answer causal questions fluently but unreliably, and the failures concentrate on interventions and counterfactuals (rungs 2 and 3 of Pearl's hierarchy). CauseFusion tests two ways of combining a language model with an explicit structural causal model (SCM):
@@ -21,6 +62,7 @@ src/
   causefusion/          the package (see below)
   datasets/             balanced-copa-dev-all.xml
   results/              experiment_dev.json (30-item llm_direct dev run, Llama-3.3-70B via Groq)
+tests/                  pytest suite for the solver (run in CI)
 archive/                superseded material, kept for the record (see archive/README.md)
 requirements.txt
 ```
@@ -55,3 +97,24 @@ python -m causefusion.experiment --half dev --conditions text,solver_meta
 ```
 
 Reports are written to `reports/` (git-ignored) unless `--out` is given.
+
+
+## Tests
+
+```bash
+pip install numpy pytest
+pytest -q
+```
+
+## Data
+
+Only Balanced COPA (dev) is bundled. The others must be downloaded separately and placed in `src/datasets/` (`ecare_dev.jsonl`, `cladder_sample.jsonl`; see `src/causefusion/data.py` for the expected format):
+
+- COPA: https://people.ict.usc.edu/~gordon/copa.html
+- Balanced COPA: https://balanced-copa.github.io/
+- e-CARE: https://github.com/Waste-Wood/e-CARE
+- CLadder: https://github.com/causalNLP/cladder (also on Hugging Face as `causalnlp/CLadder`)
+
+## License
+
+[MIT](LICENSE)
